@@ -1,0 +1,43 @@
+Q_1_1:External Driver
+    Qurry:Please provide the exact function and circuit of the block marked “External Driver.”
+
+
+
+Q_1_2:Relay interface
+    Qurry:Please specify how the Pico output is interfaced to the relay module and what the relay input requirements are.
+    
+Answer for Qurry Q_1_1 & Q_1_2:
+
+    Since LVTTL OUTPUT IO from pico not good enough to drive the Relay's induction coil, MosFET based (Simple switch operation) used to relay coil circuit, In Wokwi Relay already comes with driver circuit, but actual design just relay only used driver will be interfaced externally.
+
+Q_1_3:Pump interface
+    Qurry:The pump is currently represented by a potentiometer-like component. Please identify what this represents in the simulation.
+
+Answer for Qurry Q_1_3:
+    In Wokwi there is not motor component, we just shows NO and COM terminals will be used for Motor's Switch.
+
+Q_1_4:Indication LED
+    Qurry:Our agreed requirement was one multicolor LED. Please clarify how the submitted LED implementation provides the required multiple colors.
+
+Answer for Qurry Q_1_4:
+    We have used RGB LED with common cathode, By providing PWM signal we can diifernt colors, Futher details will be shared in further design documents.
+
+Q_1_5:GPIO assignment
+    Qurry:Please provide the Pico GPIO allocation for every connected device.
+
+Answer for Qurry Q_1_5:
+    Details will be shared in further design documents. (
+        HC-SR04-Trigger Pin: LVTTL-OUTPUT
+        HC-SR04-Echo Pin: LVTTL-INPUT
+        BUTTON-OUT1 Pin:   LVTTL-INPUT
+
+        BUZZER-POS Pin: LVTTL-OUTPUT
+        RELAY-IN Pin: LVTTL-OUTPUT
+
+        LED-[R,G,B] pin: 3 x LVTTL-OUTPUT
+)
+
+Q_1_6:Power connections
+    Qurry:Please provide the voltage/power source for the Pico, sensor, relay, driver, LED and buzzer.
+
+    Open Point: Kindly provide available power supply from your so we can plan for that, Power supply details and System power cosumption details will be shared as sepreate document later.
