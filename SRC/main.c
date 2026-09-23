@@ -4,18 +4,26 @@
 #include "LIB.h"
 
 
-void main()
+HC_SR04 Distance_Calculator;
+
+
+
+void SYS_INIT(void)
 {
-stdio_init_all();
+    HC_SR04_init(&Distance_Calculator, 3, 2);
+}
 
-printf("%x", *((volatile uint32_t *) (BASE_PSM  +   0x0)));
+int main(void)
+{
+    stdio_init_all();
 
-  while (true)
-  {
+    SYS_INIT();
 
+    while (true)
+    {
+        get_distance(&Distance_Calculator);
+        printf("Distance: %.2f mm\n", Distance_Calculator.Distance);
+    }
 
-
-  }  
-
-
+    return 0;
 }

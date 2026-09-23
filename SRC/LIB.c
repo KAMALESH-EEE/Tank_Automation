@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "lib.h"
+#include "LIB.h"
 
 void GPIO__INIT(uint8_t pin, uint8_t fun)
 {
@@ -46,7 +46,7 @@ void GPIO__OUT(uint8_t pin, bool sts)
 
 uint64_t get_time_uS ()
 {
-    return (uint64_t)((TIM_RAW_H_REG << 32) |TIM_RAW_L_REG);
+    return (uint64_t)((((uint64_t)TIM_RAW_H_REG) << 32) |TIM_RAW_L_REG);
 }
 
 void usleep (int64_t uS)
@@ -61,38 +61,26 @@ void usleep (int64_t uS)
 }
 
 
-void HC_SR04_init ()
-{ 
-  
-  GPIO__INIT (21, FUN_SIO);
-  GPIO__INIT (20, FUN_SIO);
-
-  GPIO__DIR (21, GPIO__CONFIG_OUT);
-  GPIO__DIR (20, GPIO__CONFIG_IN);
-
-  C0_INTE2_REG |= (0x3 << 18);
-
-}
-
-float get_distance ()
+float get_distance (HC_SR04 *self)
 {
 
   uint64_t st = 0, time_out = 5000000;
 
   /* Pulse for 10 uSec*/
-  GPIO__OUT (21, GPIO__HIGH);
+  GPIO__OUT (self->TRIG_PIN, GPIO__HIGH);
 
-  INTR2_REG = (0xc0000);   // Clearing the Interrupt
+  INTR0_REG = (0xc) << (self->ECHO_PIN*4);   // Clearing the Interrupt
   
   usleep(10);
-  GPIO__OUT (21, GPIO__LOW);
+  GPIO__OUT (self->TRIG_PIN, GPIO__LOW);
 
   /*wait for Echo pin High and latch the time*/
 
   while (time_out > 0)
   {
-    if (((INTR2_REG >> 19) & 0x1) == 0x1)
+    if (((INTR0_REG >> ((self->ECHO_PIN*4) +3 ) ) & 0x1) == 0x1)
     {
+
       st = get_time_uS ();
       time_out = 5000000;
       break;
@@ -104,17 +92,44 @@ float get_distance ()
   /*wait for Echo pin LOW and Calculate the time*/
  while (time_out > 0)
   {
-    if (((INTR2_REG >> 18) & 0x1) == 0x1)
+    if (((INTR0_REG >> ((self->ECHO_PIN*4) +2 )) & 0x1) == 0x1)
     {
+      
       st = (get_time_uS() - st);
-      return (float) st/5.8 ;
+      self->Distance = (float) st/5.8 ;
+      return 1;
     }
 
     time_out -= 1;
 
   }
 
-  return 100000.0;
+  self->Distance = 100000.0;
+  return 0;
+}
+
+
+
+void HC_SR04_init (HC_SR04 *self, uint32_t TRIG_PIN, uint32_t ECHO_PIN)
+{ 
+  
+
+
+  GPIO__INIT (TRIG_PIN, FUN_SIO);
+  GPIO__INIT (ECHO_PIN, FUN_SIO);
+
+  GPIO__DIR (TRIG_PIN, GPIO__CONFIG_OUT);
+  GPIO__DIR (ECHO_PIN, GPIO__CONFIG_IN);
+
+  C0_INTE0_REG |= (0xc << ((ECHO_PIN*4)));
+
+  self->TRIG_PIN = TRIG_PIN;
+  self->ECHO_PIN = ECHO_PIN;
+
+  
+ self->Distance = 100;
+
+ self->get_distance = &get_distance;
 
 }
 

@@ -6,7 +6,7 @@
 #define GPIO__CONFIG_OUT  true
 #define GPIO__CONFIG_IN   false
 #define GPIO__HIGH        true
-#define GPIO__LOW         flase
+#define GPIO__LOW         false
 
 
 
@@ -76,6 +76,17 @@
 #define IO28_CTRL_REG (* (volatile uint32_t *) (BASE_IO_BANK +0x0e4))
 
 #define IO29_CTRL_REG (* (volatile uint32_t *) (BASE_IO_BANK +0x0ec))
+
+
+#define INTR0_REG     (* (volatile uint32_t *) (BASE_IO_BANK + 0x0f0)) // Raw interrupts for GPIO from 0 to 7
+
+#define C0_INTE0_REG  (* (volatile uint32_t *) (BASE_IO_BANK + 0x100)) // Core0# interrupts enable for GPIO from 0 to 7
+
+
+#define INTR1_REG     (* (volatile uint32_t *) (BASE_IO_BANK + 0x0f4)) // Raw interrupts for GPIO from 8 to 15
+
+#define C0_INTE1_REG  (* (volatile uint32_t *) (BASE_IO_BANK + 0x104)) // Core0# interrupts enable for GPIO from 8 to 15
+
 
 #define INTR2_REG     (* (volatile uint32_t *) (BASE_IO_BANK + 0x0f8)) // Raw interrupts for GPIO from 16 to 23
 
@@ -168,7 +179,7 @@ typedef struct HC_SR04 HC_SR04;
 struct HC_SR04
 
 {
- uint32_t TRIG_PIN ,ECHO_PIN;
+ uint32_t TRIG_PIN, ECHO_PIN;
 
  float Distance;
 
@@ -176,14 +187,6 @@ struct HC_SR04
 
 
 };
-
-
-
-
-
-
-
-
 
 
 typedef struct I2C1 I2C1;
@@ -215,8 +218,8 @@ uint64_t get_time_uS ();
 
 void usleep (int64_t uS);
 
-void HC_SR04_init ();
-float get_distance ();
+void HC_SR04_init (HC_SR04 *self, uint32_t TRIG_PIN, uint32_t ECHO_PIN);
+float get_distance (HC_SR04 *self);
 
 void I2C0_init();
 void DS1307_write(uint16_t data);
