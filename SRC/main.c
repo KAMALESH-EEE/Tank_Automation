@@ -2,15 +2,22 @@
 #include <stdbool.h>
 #include "pico/stdlib.h"
 #include "LIB.h"
-
-
-HC_SR04 Distance_Calculator;
+#include  "Module.h"
 
 
 
 void SYS_INIT(void)
 {
-    HC_SR04_init(&Distance_Calculator, 3, 2);
+    HC_SR04_init(&Distance_Calculator, DIS_TRIG, DIS_ECHO);
+
+
+    RELAY_init (&Pump_Switch , RLY_CTRL_IO);
+
+    STS_LED_init (&Status_LED , LED_RD, LED_GN, LED_BU);
+
+    
+
+
 }
 
 int main(void)
@@ -18,6 +25,8 @@ int main(void)
     stdio_init_all();
 
     SYS_INIT();
+
+    Status_LED.RD_ON(&Status_LED);
 
     while (true)
     {

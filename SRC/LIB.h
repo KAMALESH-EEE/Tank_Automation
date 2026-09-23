@@ -204,6 +204,42 @@ struct I2C1
 void I2C_DEVICE (I2C1 *S_dev, uint8_t S_ID);
 
 
+typedef struct RELAY RELAY;
+
+struct RELAY
+
+{
+
+  uint32_t CTRL_IO;
+
+  void (*TURN_ON)  (RELAY *self);
+  void (*TURN_OFF) (RELAY *self);
+
+};
+
+
+typedef struct STS_LED STS_LED;
+
+struct STS_LED
+
+{
+
+  uint32_t RD_PIN, GN_PIN, BU_PIN;
+
+  void (*OFF)  (STS_LED *self);
+  void (*RD_ON)  (STS_LED *self);
+  void (*GN_ON)  (STS_LED *self);
+  void (*BU_ON)  (STS_LED *self);
+  void (*YL_ON)  (STS_LED *self);
+
+};
+
+
+
+
+
+
+
 
 
 // FUNCTION declearation
@@ -220,6 +256,11 @@ void usleep (int64_t uS);
 
 void HC_SR04_init (HC_SR04 *self, uint32_t TRIG_PIN, uint32_t ECHO_PIN);
 float get_distance (HC_SR04 *self);
+
+void RELAY_init (RELAY *self, uint32_t IO);
+
+
+void STS_LED_init (STS_LED *self, uint32_t RD, uint32_t GN, uint32_t BU);
 
 void I2C0_init();
 void DS1307_write(uint16_t data);
