@@ -1,6 +1,9 @@
 #ifndef LIBRARY_H
 #define LIBRARY_H
 
+#include <stdbool.h>
+#include <stdint.h>
+
 // State
 
 #define GPIO__CONFIG_OUT  true
@@ -82,11 +85,14 @@
 
 #define C0_INTE0_REG  (* (volatile uint32_t *) (BASE_IO_BANK + 0x100)) // Core0# interrupts enable for GPIO from 0 to 7
 
+#define PROC0__INTF0  (* (volatile uint32_t *) (BASE_IO_BANK + 0x110)) // Core0# interrupts enable for GPIO from 0 to 7
+
 
 #define INTR1_REG     (* (volatile uint32_t *) (BASE_IO_BANK + 0x0f4)) // Raw interrupts for GPIO from 8 to 15
 
 #define C0_INTE1_REG  (* (volatile uint32_t *) (BASE_IO_BANK + 0x104)) // Core0# interrupts enable for GPIO from 8 to 15
 
+#define PROC0__INTF1  (* (volatile uint32_t *) (BASE_IO_BANK + 0x114)) // Core0# interrupts enable for GPIO from 0 to 7
 
 #define INTR2_REG     (* (volatile uint32_t *) (BASE_IO_BANK + 0x0f8)) // Raw interrupts for GPIO from 16 to 23
 
@@ -234,12 +240,53 @@ struct STS_LED
 
 };
 
+typedef enum MOTOR_STATUS MOTOR_STATUS;
+
+enum MOTOR_STATUS
+{
+
+    MANUAL_ON,
+    MANUAL_OFF,
+    AUTO_ON,
+    AUTO_OFF
+
+};
+
+
+typedef struct PUSH_BUTTON PUSH_BUTTON;
+
+struct PUSH_BUTTON
+{
+
+    uint32_t CTRL_IO;
+    MOTOR_STATUS PUMP_STATUS;
+
+    int (*GET_BUTTON_STATUS) (PUSH_BUTTON *self);
+
+};
 
 
 
+typedef struct SYSTEM SYSTEM;
+
+struct SYSTEM
+{
+
+  HC_SR04 DIS_SENSOR;
+  RELAY PUMP_DRIVER;
+  STS_LED STATUS_LED;
+
+  PUSH_BUTTON CONTROL_BUTTON;
+
+  void (*RUN) (SYSTEM *self);
+
+  int M_TIMMER;
 
 
 
+};
+
+void SYS_init (SYSTEM *self);
 
 
 // FUNCTION declearation
@@ -250,20 +297,21 @@ void GPIO__DIR(uint8_t pin, bool dir);
 
 void GPIO__OUT(uint8_t pin, bool sts);
 
+int GPIO__READ(uint8_t pin);
+
+
 uint64_t get_time_uS ();
 
 void usleep (int64_t uS);
 
 void HC_SR04_init (HC_SR04 *self, uint32_t TRIG_PIN, uint32_t ECHO_PIN);
-float get_distance (HC_SR04 *self);
-
 void RELAY_init (RELAY *self, uint32_t IO);
-
-
 void STS_LED_init (STS_LED *self, uint32_t RD, uint32_t GN, uint32_t BU);
+void PUSH_BUTTON_init (PUSH_BUTTON * self, uint8_t PIN);
 
 void I2C0_init();
 void DS1307_write(uint16_t data);
 uint8_t DS1307_read(uint8_t data);
 
 #endif
+

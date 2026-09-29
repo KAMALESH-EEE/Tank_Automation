@@ -3,6 +3,20 @@
 #include <stdbool.h>
 
 #include "LIB.h"
+#include "Module.h"
+
+
+
+  // Modules Decleration
+  HC_SR04 Distance_Calculator;
+
+  RELAY Pump_Switch;
+
+  STS_LED Status_LED;
+
+  PUSH_BUTTON ON_OFF_CTRL;
+
+
 
 void GPIO__INIT(uint8_t pin, uint8_t fun)
 {
@@ -40,6 +54,13 @@ void GPIO__OUT(uint8_t pin, bool sts)
   IO_OUT_REG &= ~(1 << pin); // clear the state
 
   IO_OUT_REG |= ((sts & 0x1) << pin); // setting new state
+
+}
+
+int GPIO__READ(uint8_t pin)
+{
+
+  return (IO_IN_REG >> pin) & 0x1;
 
 }
 
@@ -308,8 +329,178 @@ void STS_LED_init (STS_LED *self, uint32_t RD, uint32_t GN, uint32_t BU)
   self->RD_ON = &STS_LED_RD_ON;
   self->GN_ON = &STS_LED_GN_ON;
   self->BU_ON = &STS_LED_BU_ON;
+  self->YL_ON = &STS_LED_YL_ON;
 
 
   
 }
 
+
+
+int GET_BUTTON_STATUS (PUSH_BUTTON * self)
+{
+    int ret = 0;
+
+    /* Each CTRL_IO uses a 4-bit field */
+    int shift = (self -> CTRL_IO % 8) * 4;
+
+    /* Read the selected 4-bit field */
+    uint32_t value = (INTR1_REG >> shift) & 0xc;
+
+  /*printf("INTR1_REG = 0x%08X\n", INTR1_REG);
+    printf("CTRL_IO   = %d\n", self -> CTRL_IO);
+    printf("SHIFT     = %d\n", shift);
+    printf("FIELD     = 0x%X\n", value);
+
+     Check whether selected field is 0xC */
+    if (value == 0xC)
+    {
+
+        INTR1_REG |= (0xC << shift);
+        ret = 1;
+
+    }
+
+    //printf("After clear = 0x%08X\n", INTR1_REG);
+
+    return ret;
+
+}
+
+
+
+void PUSH_BUTTON_init (PUSH_BUTTON * self, uint8_t PIN)
+{
+  self -> CTRL_IO = PIN;
+  int shift = (self -> CTRL_IO % 8) * 4;
+
+  GPIO__INIT (PIN,  FUN_SIO);
+
+  GPIO__DIR  (PIN, GPIO__CONFIG_IN);
+
+  self -> PUMP_STATUS = MANUAL_OFF;
+
+  C0_INTE1_REG |= 0xc  << shift;
+
+  self -> GET_BUTTON_STATUS = & GET_BUTTON_STATUS;
+
+
+}
+
+
+
+
+void RUN (SYSTEM *self)
+{
+
+  self -> M_TIMMER += 1;
+  self -> M_TIMMER %= 7;
+
+
+  self->DIS_SENSOR.get_distance(& self->DIS_SENSOR);
+  int BT_STS = self->CONTROL_BUTTON.GET_BUTTON_STATUS(& self->CONTROL_BUTTON);
+  //printf("%f",self->DIS_SENSOR.Distance);
+
+  if ((self->DIS_SENSOR.Distance < 0) || (self->DIS_SENSOR.Distance > 1000))
+  {
+
+    self->STATUS_LED.YL_ON(& self->STATUS_LED);
+    
+    self->CONTROL_BUTTON.PUMP_STATUS = AUTO_OFF;
+    self->PUMP_DRIVER.TURN_OFF (& self->PUMP_DRIVER);
+    
+    GPIO__OUT(BUZZER,GPIO__HIGH);
+
+    return;
+  }
+
+  else{
+
+    
+  if (self ->M_TIMMER == 0)
+
+    GPIO__OUT(BUZZER,GPIO__HIGH);
+
+  if (self ->M_TIMMER == 1)
+
+    GPIO__OUT(BUZZER,GPIO__LOW);
+
+    if ( BT_STS&& ((self->CONTROL_BUTTON.PUMP_STATUS == MANUAL_OFF) || (self->CONTROL_BUTTON.PUMP_STATUS == AUTO_OFF)))
+    {
+
+      self->CONTROL_BUTTON.PUMP_STATUS = MANUAL_ON;
+          self->STATUS_LED.GN_ON(& self->STATUS_LED);
+      self->PUMP_DRIVER.TURN_ON (& self->PUMP_DRIVER);
+
+    }
+
+  else if (BT_STS && ((self->CONTROL_BUTTON.PUMP_STATUS == MANUAL_ON) || (self->CONTROL_BUTTON.PUMP_STATUS == AUTO_ON)))
+    {
+
+      self->CONTROL_BUTTON.PUMP_STATUS = MANUAL_OFF;
+      self->STATUS_LED.GN_ON(& self->STATUS_LED);
+      self->PUMP_DRIVER.TURN_OFF (& self->PUMP_DRIVER);
+
+    }
+
+
+ if (self->DIS_SENSOR.Distance > 800)
+    {
+
+      self->CONTROL_BUTTON.PUMP_STATUS = AUTO_OFF;
+      self->STATUS_LED.BU_ON(& self->STATUS_LED);
+      self->PUMP_DRIVER.TURN_OFF (& self->PUMP_DRIVER);
+
+    }
+
+
+if ((self->DIS_SENSOR.Distance < 200) &&  (self->CONTROL_BUTTON.PUMP_STATUS == AUTO_OFF))
+    {
+
+      self->CONTROL_BUTTON.PUMP_STATUS = AUTO_ON;
+      self->STATUS_LED.RD_ON(& self->STATUS_LED);
+      self->PUMP_DRIVER.TURN_ON (& self->PUMP_DRIVER);
+
+    }
+
+else
+    {
+      self->STATUS_LED.GN_ON(& self->STATUS_LED);
+
+    }
+    
+    
+
+  }
+
+   printf("\n%d\n",self->CONTROL_BUTTON.PUMP_STATUS);
+
+
+  usleep(1000 * 200);
+
+  return;
+
+}
+
+
+
+
+void SYS_init (SYSTEM *self)
+{
+
+  HC_SR04_init(&self->DIS_SENSOR, DIS_TRIG, DIS_ECHO);
+
+  RELAY_init(&self->PUMP_DRIVER, RLY_CTRL_IO);
+
+  STS_LED_init(&self->STATUS_LED, LED_RD, LED_GN, LED_BU);
+
+  PUSH_BUTTON_init(&self->CONTROL_BUTTON, PUS_BUTTON_PIN);
+
+  self->RUN = &RUN;
+  self -> M_TIMMER = 0;
+
+  GPIO__INIT(BUZZER, FUN_SIO);
+  
+  GPIO__DIR(BUZZER, GPIO__CONFIG_OUT);
+
+}
