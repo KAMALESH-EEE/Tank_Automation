@@ -1,0 +1,35 @@
+Q_2_1:Power supply architecture
+
+Answer for Qurry Q_2_1:
+
+    The supply is designed to operate upto 28VDC.
+    TVS diode is to supress the spikes above 28V
+    C4, TR1, C1, C3 are act as EMI filter.
+    EMI filter output ~24V used operate relay for water pump, and used to generate 5V.
+    U1, U2 are 5V, 1A LDO's parllel operation will be improve the thermal performance.
+
+
+Q_2_2: HC-SR04 interface
+Answer for Qurry Q_2_2:
+
+    J2 connector is interface for HC-SR04
+    LM348, U3:B, ECHO signal from HC-SR04 is 5V level, will step down to 3.3V using voltage divider circuit, and the LM348 act as buffer
+    LM348, U3:C, TRIG signal from PICO is 3.3V level, will step up to 5V using LM348 as well as act as buffer
+
+Q_2_3: LM348 selection
+Answer for Qurry Q_2_3:    LM348 is a 4 op-amp IC, 3 will be used in design for buffer and level shifter.
+
+Q_2_4: Pump switching interface
+Answer for Qurry Q_2_4:
+
+    Coil Voltage        :   5VDC
+    Switching Voltage   :   240VAC
+    Coil Current        :   72mA
+    *D3 will be used act as free wheel diode
+    *3.3V will step up to 5V
+
+Q_2_5: BOM review
+Answer for Qurry Q_2_5: check the part number in BOM at stock code
+
+* Mentioned updated in R2
+
